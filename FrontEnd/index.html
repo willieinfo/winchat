@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinChat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="/FrontEnd/style.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"
+        integrity="sha512-Xm9qbB6Pu06k3PUwPj785dyTl6oHxgsv9nHp7ej7nCpAqGZT3OZpsELuCYX05DdonFpTlBpXMOxjavIAIUwr0w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script defer src="/FrontEnd/app.js"></script>
+</head>
+<body>
+    <div class="userList">
+        <div class="chatLogo">
+            <img src="/FrontEnd/InfoPlus.png" alt="" id="winChatImg">
+            <span>WinChat</span>
+        </div>
+        <div class="usersList">
+            <ul class="user-name"></ul> 
+        </div>
+    </div>
+    <main>
+        <form class="form-join">
+            <input type="text" id="name" maxlength="20" placeholder="Your name" size="20" required>
+            <button id="join" type="submit">Join</button>
+        </form>
+        <div class="utilityDiv"></div>
+        <ul class="chat-display"></ul>
+        <p class="activity"></p>
+        <form class="form-msg">
+            <input type="textarea" id="message" placeholder="Your message" required>
+            <button type="submit"><i class="fas fa-paper-plane"></i> Send</button>
+            <div id="chkAllUsers">
+                <input type="checkbox" id="sendAllUsers" >
+                <label for="sendAllUsers">All Users</label>
+            </div>
+            
+        </form>
+    </main>
+</body>
+</html>
