@@ -1,10 +1,12 @@
 import { MessageBox } from "./functlib.js";
+import { initVoiceCallFeatures } from './voiceCall.js';
 
 const msgInput = document.querySelector('#message');
 const nameInput = document.querySelector('#name');
 const activity = document.querySelector('.activity');
 const userName = document.querySelector('.user-name');
 const chatDisplay = document.querySelector('.chat-display');
+
 const chatEraser = document.querySelector('#chatEraser');
 const chatSmile = document.querySelector('#chat-smile');
 const chatImages = document.querySelector('#chat-images');
@@ -14,19 +16,11 @@ chatSmile.addEventListener('click', sendSmiley);
 chatPaperClip.addEventListener('click', send_a_File);
 chatImages.addEventListener('click', sendImage);
 
+
 document.querySelector('.form-msg').addEventListener('submit', sendMessage);
 document.querySelector('.form-join').addEventListener('submit', enterApp);
 
 const socket = io('http://localhost:3500');
-
-msgInput.addEventListener('keypress', () => {
-    const sendAllUsers = document.querySelector('#sendAllUsers').checked;
-    if (sendAllUsers) {
-        socket.emit('activity', { name: nameInput.value, room: null });
-    } else if (selectedUser) {
-        socket.emit('activity', { name: nameInput.value, room: getPrivateRoomId(nameInput.value, selectedUser.name) });
-    }
-});
 
 let selectedUser = null;
 socket.on("message", (data) => {
@@ -88,6 +82,7 @@ socket.on("activity", (name) => {
 socket.on('userList', ({ users }) => {
     showUsers(users);
 });
+
 
 function showUsers(users) {
     userName.innerHTML = '';
@@ -425,3 +420,19 @@ function send_a_File() {
 
     input.click();
 }
+
+msgInput.addEventListener('keypress', () => {
+    const sendAllUsers = document.querySelector('#sendAllUsers').checked;
+    if (sendAllUsers) {
+        socket.emit('activity', { name: nameInput.value, room: null });
+    } else if (selectedUser) {
+        socket.emit('activity', { name: nameInput.value, room: getPrivateRoomId(nameInput.value, selectedUser.name) });
+    }
+});
+
+
+initVoiceCallFeatures({
+    socket,
+    nameInput,
+    selectedUserGetter: () => selectedUser
+});

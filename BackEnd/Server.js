@@ -88,7 +88,45 @@ io.on('connection', socket => {
             socket.broadcast.emit('activity', name);
         }
     });
+
+
+    // ===========================================
+        socket.on('voice-offer', ({ target, offer }) => {
+            const targetSocket = getUserSocketIdByName(target);
+            if (targetSocket) {
+                io.to(targetSocket).emit('voice-offer', {
+                    from: getUser(socket.id).name,
+                    offer
+                });
+            }
+        });
+
+        socket.on('voice-answer', ({ target, answer }) => {
+            const targetSocket = getUserSocketIdByName(target);
+            if (targetSocket) {
+                io.to(targetSocket).emit('voice-answer', {
+                    answer
+                });
+            }
+        });
+
+        socket.on('ice-candidate', ({ target, candidate }) => {
+            const targetSocket = getUserSocketIdByName(target);
+            if (targetSocket) {
+                io.to(targetSocket).emit('ice-candidate', {
+                    candidate
+                });
+            }
+        });
+
+
+    // ===========================================
+
 });
+function getUserSocketIdByName(name) {
+    const user = UsersState.users.find(u => u.name === name);
+    return user?.id;
+}
 
 function buildMsg(name, text, room = null, type = 'text', fileName = '') {
     return {

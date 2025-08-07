@@ -1,13 +1,13 @@
 :root {
     /* blue */
-    --main-bg-color:rgb(0,64,128);
+    /* --main-bg-color:rgb(0,64,128);
     --second-bg-color: rgb(0,128,192); 
-    --darker-bg-color: rgb(0,0,139); 
+    --darker-bg-color: rgb(0,0,139);  */
 
     /* green */
-    /* --main-bg-color: rgb(47,79,79);
+    --main-bg-color: rgb(47,79,79);
     --second-bg-color: rgb(34, 139, 34);
-    --darker-bg-color: rgb(0, 100, 0); */
+    --darker-bg-color: rgb(0, 100, 0);
 
     /* tomato */
     /* --main-bg-color: rgb(255, 99, 71);
@@ -134,8 +134,6 @@ main {
 .utilityDiv #chatEraser {
     padding: 4px;
     cursor: pointer;
-}
-.utilityDiv #chatEraser:hover {
     color: red;
 }
 
@@ -226,21 +224,37 @@ input, button {
     margin: 10px 0;
 }
 
-.clear-chat-button {
-    margin: 10px;
-    padding: 8px 16px;
-    background-color: #ff4d4d;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-}
-.clear-chat-button:hover {
-    background-color: #cc0000;
-}
 #chkAllUsers:hover {
     cursor: pointer;
+}
+
+.call-status {
+    font-size: 14px;
+    color: #555;
+    margin-top: 8px;
+    transition: opacity 0.3s ease;
+}
+
+.chatAttachments i {
+    transition: transform 0.2s ease, color 0.2s ease;
+    cursor: pointer;
+}
+
+.chatAttachments i:hover {
+    transform: scale(1.3);  /* Grows the icon smoothly */
+    /* color: #007bff;          */
+    color: var(--second-bg-color)
+}
+
+.icon-bubble {
+    display: inline-block;
+    padding: 6px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.icon-bubble:hover {
+    background: #f0f0f0;
 }
 
 /* Apply to all scrollable elements */

@@ -23,20 +23,23 @@
     <main>
         <form class="form-join">
             <input type="text" id="name" maxlength="20" placeholder="Your name" size="20" required>
-            <button id="join" type="submit">Join</button>
+            <button id="join" type="submit" title="Enter Chat"><i class="fa-solid fa-user-plus"></i> Join</button>
         </form>
-        <div class="utilityDiv">
-            <i id="chatMobileFone" class="fas fa-phone-flip"></i>
-            <i id="chatEraser" class="fas fa-eraser"></i>
+        <div class="utilityDiv chatAttachments">
+            <span id="chatVoiceCall" class="icon-bubble"><i class="fas fa-phone-flip" title="Make a voice call"></i></span>
+            <span id="chatEraser" class="icon-bubble"><i class="fas fa-eraser" title="Erase Chat messages"></i></span>
         </div>
         <ul class="chat-display"></ul>
         <p class="activity"></p>
+        <div id="callStatus" class="call-status"></div>
+
         <form class="form-msg">
             <div class="chatAttachments">
-                <i id="chat-images" class="fas fa-images"></i>
-                <i id="chat-paperclip" class="fas fa-paperclip"></i>
-                <i id="chat-smile" class="fas fa-smile"></i>
+                <span id="chat-images" class="icon-bubble"><i class="fas fa-images" title="Attach image"></i></span>
+                <span id="chat-paperclip" class="icon-bubble"><i class="fas fa-paperclip" title="Attach file"></i></span>
+                <span id="chat-smile" class="icon-bubble"><i class="fas fa-smile" title="Add emoji"></i></span>
             </div>
+
             <input type="textarea" id="message" placeholder="Your message" required>
             <button type="submit"><i class="fas fa-paper-plane"></i> Send</button>
             <div id="chkAllUsers">
