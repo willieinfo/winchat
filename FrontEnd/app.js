@@ -1,13 +1,23 @@
+import { MessageBox } from "./functlib.js";
+
 const msgInput = document.querySelector('#message');
 const nameInput = document.querySelector('#name');
 const activity = document.querySelector('.activity');
 const userName = document.querySelector('.user-name');
 const chatDisplay = document.querySelector('.chat-display');
+const chatEraser = document.querySelector('#chatEraser');
+const chatSmile = document.querySelector('#chat-smile');
+const chatImages = document.querySelector('#chat-images');
+const chatPaperClip = document.querySelector('#chat-paperclip');
 
-const socket = io('http://localhost:3000');
+chatSmile.addEventListener('click', sendSmiley);
+chatPaperClip.addEventListener('click', send_a_File);
+chatImages.addEventListener('click', sendImage);
 
 document.querySelector('.form-msg').addEventListener('submit', sendMessage);
 document.querySelector('.form-join').addEventListener('submit', enterApp);
+
+const socket = io('http://localhost:3500');
 
 msgInput.addEventListener('keypress', () => {
     const sendAllUsers = document.querySelector('#sendAllUsers').checked;
@@ -18,10 +28,9 @@ msgInput.addEventListener('keypress', () => {
     }
 });
 
-
 let selectedUser = null;
 socket.on("message", (data) => {
-    const { name, text, time, room } = data;
+    const { name, text, time, room, type, fileName } = data;
     if (
         (selectedUser && room === getPrivateRoomId(nameInput.value, selectedUser.name)) ||
         room === null
@@ -32,6 +41,24 @@ socket.on("message", (data) => {
         if (name === 'Admin') {
             li.innerHTML = `<div class="post__admin">${text}</div>`;
             li.className = "post__admin";
+        } else if (type === 'image') {
+            li.innerHTML = `
+                <div class="post__text ${fromUser ? 'post__text--user' : 'post__text--reply'}">
+                    <img src="${text}" alt="${fileName}" style="max-width: 200px; max-height: 200px;" />
+                </div>
+                <div class="post__header ${fromUser ? 'post__header--user' : 'post__header--reply'}">
+                    <span class="post__header--name">${fromUser ? '' : name}${room === null ? ' (All)' : ''}</span> 
+                    <span class="post__header--time">${time}</span> 
+                </div>`;
+        } else if (type === 'file') {
+            li.innerHTML = `
+                <div class="post__text ${fromUser ? 'post__text--user' : 'post__text--reply'}">
+                    <a href="${text}" download="${fileName}">${fileName}</a>
+                </div>
+                <div class="post__header ${fromUser ? 'post__header--user' : 'post__header--reply'}">
+                    <span class="post__header--name">${fromUser ? '' : name}${room === null ? ' (All)' : ''}</span> 
+                    <span class="post__header--time">${time}</span> 
+                </div>`;
         } else {
             li.innerHTML = `
                 <div class="post__text ${fromUser ? 'post__text--user' : 'post__text--reply'}">${text}</div>
@@ -44,7 +71,7 @@ socket.on("message", (data) => {
         chatDisplay.scrollTop = chatDisplay.scrollHeight;
     }
 
-    saveMessages(data,room)
+    saveMessages(data, room);
 });
 
 let activityTimer;
@@ -64,9 +91,8 @@ socket.on('userList', ({ users }) => {
 
 function showUsers(users) {
     userName.innerHTML = '';
-    // user.name !== nameInput.value
     if (users) {
-        users.forEach((user, i) => {
+        users.forEach((user) => {
             if (user.name !== nameInput.value) { // Don't show self
                 const userItem = document.createElement('li');
                 userItem.className = 'userItem';
@@ -74,7 +100,7 @@ function showUsers(users) {
                 const initials = getUserInitials(user.name);                
                 const userIcon = document.createElement('div');
                 userIcon.className = 'userIcon';
-                userIcon.innerHTML =initials    //Display Initials
+                userIcon.innerHTML = initials; // Display Initials
                 userIcon.style.backgroundColor = getRandomColor();
 
                 if (selectedUser && selectedUser.name === user.name) {
@@ -109,80 +135,75 @@ function showUsers(users) {
                 userName.appendChild(userItem);
             }
         });
-
-        // Add Clear Chat button
-        const clearChatButton = document.createElement('button');
-        clearChatButton.textContent = 'Clear Chat';
-        clearChatButton.className = 'clear-chat-button';
-        clearChatButton.addEventListener('click', () => {
-            const room = selectedUser ? getPrivateRoomId(nameInput.value, selectedUser.name) : null;
-            deleteMessages(room);
-            chatDisplay.innerHTML = '';
-            updateChatDisplay('Chat history cleared');
-        });
-        userName.appendChild(clearChatButton);        
-
-        
     }
 
-    function getRandomColor() {
-        const letters = '0123456789ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * 16)];
-        }
-        return color;
-    }
-
-    function getUserInitials(userName) {
-        const nameParts = userName.split(' ');  // Split name into words
-        const initials = nameParts.map(part => part.charAt(0).toUpperCase()).join('');  // Get the first letter of each word
-        return initials.length > 2 ? initials.substring(0, 2) : initials;  // Only take the first 2 letters
-    }
-
-    function updateChatDisplay(message) {
-        const li = document.createElement('li');
-        li.innerHTML = `<div class="post__admin">${message}</div>`;
-        li.className = "post__admin";
-        chatDisplay.appendChild(li);
-        chatDisplay.scrollTop = chatDisplay.scrollHeight;
-    }
-
+    // Moved chatEraser event listener outside the forEach loop
+    chatEraser.addEventListener('click', () => {
+        const room = selectedUser ? getPrivateRoomId(nameInput.value, selectedUser.name) : null;
+        deleteMessages(room);
+        chatDisplay.innerHTML = '';
+        updateChatDisplay('Chat history cleared');
+    });
 }
 
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function getUserInitials(userName) {
+    const nameParts = userName.split(' '); // Split name into words
+    const initials = nameParts.map(part => part.charAt(0).toUpperCase()).join(''); // Get the first letter of each word
+    return initials.length > 2 ? initials.substring(0, 2) : initials; // Only take the first 2 letters
+}
+
+function updateChatDisplay(message) {
+    const li = document.createElement('li');
+    li.innerHTML = `<div class="post__admin">${message}</div>`;
+    li.className = "post__admin";
+    chatDisplay.appendChild(li);
+    chatDisplay.scrollTop = chatDisplay.scrollHeight;
+}
 
 function sendMessage(e) {
     e.preventDefault();
+
     const sendAllUsers = document.querySelector('#sendAllUsers').checked;
-    let chatMessage = null
-    let room = null
-    
-    if (nameInput.value && msgInput.value) {
-        if (sendAllUsers) {
-            // Send to all users
-            chatMessage = {
-                name: nameInput.value,
-                text: msgInput.value,
-                date: getDate_Now(),
-                time: getTime_Now(),
-                room: null // No room for broadcast
-            } 
-        } else if (selectedUser) {
-            // Send to private room
-            room = getPrivateRoomId(nameInput.value, selectedUser.name);
-            chatMessage = {
-                name: nameInput.value,
-                text: msgInput.value,
-                date: getDate_Now(),
-                time: getTime_Now(),
-                room 
-            } 
-        }
-        socket.emit('message', chatMessage);
-        msgInput.value = '';
+    const name = nameInput.value.trim();
+    const message = msgInput.value.trim();
+    const hasSelectedUser = selectedUser && selectedUser.name;
+
+    // Check if all are empty or invalid
+    if (!name || !message || (!sendAllUsers && !hasSelectedUser)) {
+        console.log('Fill in all fields and select a user or check All Users.');
+        MessageBox('Fill in all fields and select a user or check All Users.', 'Ok');
+        msgInput.focus();
+        return;
     }
+
+    let room = null;
+    let chatMessage = {
+        name,
+        text: message,
+        date: getDate_Now(),
+        time: getTime_Now(),
+        room: null
+    };
+
+    if (!sendAllUsers && hasSelectedUser) {
+        room = getPrivateRoomId(name, selectedUser.name);
+        chatMessage.room = room;
+    }
+
+    socket.emit('message', chatMessage);
+    msgInput.value = '';
     msgInput.focus();
-    saveMessages(chatMessage,room)
+
+    saveMessages(chatMessage, room);
 }
 
 function enterApp(e) {
@@ -195,7 +216,6 @@ function enterApp(e) {
         document.querySelector('.form-msg').style.display = 'flex';
         // Load global chat messages (room: null)
         loadMessages(null);
-
     }
 }
 
@@ -204,44 +224,65 @@ function getPrivateRoomId(user1, user2) {
     return [user1, user2].sort().join('_');
 }
 
-function saveMessages(data,room) {
+function getTime_Now() {
+    const date = new Date();
+    const cTime_Now = new Intl.DateTimeFormat('default', {
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric'
+    }).format(date);
+    return cTime_Now;
+}
+
+function getDate_Now() {
+    const date = new Date();
+    const cDate_Now = new Intl.DateTimeFormat('default', {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric'
+    }).format(date);
+    return cDate_Now;
+}
+
+// Loading, Saving, Deleting messages to / from localStorage
+function saveMessages(data, room) {
     let messages = JSON.parse(localStorage.getItem(`chatMessages_${room}`) || '[]');
     messages.push(data);
     localStorage.setItem(`chatMessages_${room}`, JSON.stringify(messages));
 }
 
-function getTime_Now() {
-    const date = new Date()
-    cTime_Now= new Intl.DateTimeFormat('default', {
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric'
-    }).format(date)
-    return cTime_Now
-}
-function getDate_Now() {
-    const date = new Date()
-    cDate_Now= new Intl.DateTimeFormat('default', {
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric'
-   }).format(date)
-    return cDate_Now
-}
-
-
-// Add this function to load messages from localStorage
 function loadMessages(room) {
     const messages = JSON.parse(localStorage.getItem(`chatMessages_${room}`) || '[]');
     chatDisplay.innerHTML = ''; // Clear current chat display
     messages.forEach(data => {
-        const { name, text, time, room: messageRoom } = data;
+        const { name, text, time, room: messageRoom, type, fileName } = data;
         const fromUser = name === nameInput.value;
         const li = document.createElement('li');
+        
+        if (text.includes('Welcome') || text.includes('joined')) return;
+        
         li.className = fromUser ? 'post post--right' : 'post post--left';
         if (name === 'Admin') {
             li.innerHTML = `<div class="post__admin">${text}</div>`;
             li.className = "post__admin";
+        } else if (type === 'image') {
+            li.innerHTML = `
+                <div class="post__text ${fromUser ? 'post__text--user' : 'post__text--reply'}">
+                    <img src="${text}" alt="${fileName}" style="max-width: 200px; max-height: 200px;" />
+                </div>
+                <div class="post__header ${fromUser ? 'post__header--user' : 'post__header--reply'}">
+                    <span class="post__header--name">${fromUser ? '' : name}${messageRoom === null ? ' (All)' : ''}</span> 
+                    <span class="post__header--time">${time}</span> 
+                </div>`;
+        } else if (type === 'file') {
+            li.innerHTML = `
+                <div class="post__text ${fromUser ? 'post__text--user' : 'post__text--reply'}">
+                    <a href="${text}" download="${fileName}">${fileName}</a>
+                </div>
+                <div class="post__header ${fromUser ? 'post__header--user' : 'post__header--reply'}">
+                    <span class="post__header--name">${fromUser ? '' : name}${messageRoom === null ? ' (All)' : ''}</span> 
+                    <span class="post__header--time">${time}</span> 
+                </div>`;
         } else {
             li.innerHTML = `
                 <div class="post__text ${fromUser ? 'post__text--user' : 'post__text--reply'}">${text}</div>
@@ -257,4 +298,130 @@ function loadMessages(room) {
 
 function deleteMessages(room) {
     localStorage.removeItem(`chatMessages_${room}`);
+}
+
+function sendSmiley() {
+    const emoticons = ['😊', '🥰', '😂', '😍', '😎', '😢', '😡', '👍', '👏', '🙌'];
+    const smileyPicker = document.createElement('div');
+    smileyPicker.className = 'smiley-picker';
+    smileyPicker.style.position = 'absolute';
+    smileyPicker.style.background = '#fff';
+    smileyPicker.style.border = '1px solid #ccc';
+    smileyPicker.style.padding = '10px';
+    smileyPicker.style.zIndex = '1000';
+    smileyPicker.style.display = 'flex';
+    smileyPicker.style.gap = '10px';
+
+    emoticons.forEach(emoji => {
+        const button = document.createElement('button');
+        button.textContent = emoji;
+        button.style.fontSize = '20px';
+        button.style.border = 'none';
+        button.style.background = 'none';
+        button.style.cursor = 'pointer';
+        button.addEventListener('click', () => {
+            msgInput.value += emoji;
+            msgInput.focus();
+            smileyPicker.remove();
+            // Emit activity to show typing
+            const sendAllUsers = document.querySelector('#sendAllUsers').checked;
+            if (sendAllUsers) {
+                socket.emit('activity', { name: nameInput.value, room: null });
+            } else if (selectedUser) {
+                socket.emit('activity', { name: nameInput.value, room: getPrivateRoomId(nameInput.value, selectedUser.name) });
+            }
+        });
+        smileyPicker.appendChild(button);
+    });
+
+    const chatSmileRect = chatSmile.getBoundingClientRect();
+    smileyPicker.style.top = `${chatSmileRect.top - 50}px`;
+    smileyPicker.style.left = `${chatSmileRect.left}px`;
+    document.body.appendChild(smileyPicker);
+
+    // Close picker when clicking outside
+    const closePicker = (e) => {
+        if (!smileyPicker.contains(e.target) && e.target !== chatSmile) {
+            smileyPicker.remove();
+            document.removeEventListener('click', closePicker);
+        }
+    };
+    setTimeout(() => {
+        document.addEventListener('click', closePicker);
+    }, 0);
+}
+
+function sendImage() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+
+    input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                MessageBox('Image size must be less than 5MB', 'Ok');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                const name = nameInput.value.trim();
+                const room = selectedUser ? getPrivateRoomId(name, selectedUser.name) : null;
+                const chatMessage = {
+                    name,
+                    text: reader.result, // Base64 encoded image
+                    date: getDate_Now(),
+                    time: getTime_Now(),
+                    room,
+                    type: 'image',
+                    fileName: file.name
+                };
+                socket.emit('message', chatMessage);
+                saveMessages(chatMessage, room);
+            };
+            reader.readAsDataURL(file);
+        }
+        document.body.removeChild(input);
+    });
+
+    input.click();
+}
+
+function send_a_File() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+
+    input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                MessageBox('File size must be less than 10MB', 'Ok');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                const name = nameInput.value.trim();
+                const room = selectedUser ? getPrivateRoomId(name, selectedUser.name) : null;
+                const chatMessage = {
+                    name,
+                    text: reader.result, // Base64 encoded file
+                    date: getDate_Now(),
+                    time: getTime_Now(),
+                    room,
+                    type: 'file',
+                    fileName: file.name
+                };
+                socket.emit('message', chatMessage);
+                saveMessages(chatMessage, room);
+            };
+            reader.readAsDataURL(file);
+        }
+        document.body.removeChild(input);
+    });
+
+    input.click();
 }

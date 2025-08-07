@@ -1,19 +1,28 @@
 :root {
-    /* --main-bg-color:rgb(0,64,128);
-    --second-bg-color: rgb(91, 147, 193); 
-    --darker-bg-color: rgb(0,0,139);  */
+    /* blue */
+    --main-bg-color:rgb(0,64,128);
+    --second-bg-color: rgb(0,128,192); 
+    --darker-bg-color: rgb(0,0,139); 
 
+    /* green */
     /* --main-bg-color: rgb(47,79,79);
     --second-bg-color: rgb(34, 139, 34);
     --darker-bg-color: rgb(0, 100, 0); */
 
-    --main-bg-color: rgb(255, 99, 71);
+    /* tomato */
+    /* --main-bg-color: rgb(255, 99, 71);
     --second-bg-color: rgb(255, 69, 0);
-    --darker-bg-color: rgb(255, 0, 0);
+    --darker-bg-color: rgb(255, 0, 0); */
 
-    --main-bg-color: rgb(128, 0, 64);
+    /* maroon */
+    /* --main-bg-color: rgb(128, 0, 64);
     --second-bg-color: rgb(176, 0, 0);
-    --darker-bg-color: rgb(98, 0, 0);
+    --darker-bg-color: rgb(98, 0, 0); */
+
+    /* violet */
+    /* --main-bg-color: rgb(64, 0, 128);
+    --second-bg-color: rgb(138, 43, 226);
+    --darker-bg-color: rgb(75, 0, 130); */
 
 
 }
@@ -22,10 +31,11 @@ body {
     display: flex;
     margin: 0;
     height: 100vh;
-    max-width: 800px;
+    /* max-width: 800px; */
 }
 .userList {
-    width: 200px;
+    min-width: 180px;
+    width: 30%;
     background: #f0f0f0;
     border-right: 1px solid #ccc;
     padding: 10px 10px 0px 10px;
@@ -72,7 +82,7 @@ body {
     background: #e0e0e0;
 }
 .userItem.selected {
-    background: var(--darker-bg-color);
+    background: var(--second-bg-color);
     color: white;
 }
 
@@ -100,14 +110,33 @@ main {
     display: flex;
     flex-direction: column;
     padding: 20px;
+
 }
 .form-join {
     display: flex;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 0px;
 }
 .form-join button:hover{
     cursor: pointer;
+}
+.utilityDiv {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px;
+    color:#555;
+    align-items: center;
+    gap: 10px;
+    overflow: auto;
+    color: rgba(128, 128, 128, 0.873);
+
+}
+.utilityDiv #chatEraser {
+    padding: 4px;
+    cursor: pointer;
+}
+.utilityDiv #chatEraser:hover {
+    color: red;
 }
 
 .chat-display {
@@ -117,7 +146,9 @@ main {
     overflow-y: auto;
     border: 1px solid #ccc;
     padding: 10px;
+    margin-top: 0px;
     margin-bottom: 20px;
+    min-width: 100px;
 }
 .post {
     margin: 10px 0;
@@ -134,11 +165,11 @@ main {
     max-width: 60%;
     padding: 10px;
     border-radius: 10px;
-    background-color: aquamarine;
 }
 .post__text--user {
     background: var(--main-bg-color);
     color: white;
+    text-align: right;
 }
 .post__text--reply {
     background: #e0e0e0;
@@ -158,9 +189,25 @@ main {
     color: #888;
     font-style: italic;
 }
+
+.chatAttachments {
+    display: flex;
+    color: rgba(128, 128, 128, 0.873);
+    gap: 10px;
+}
+#chat-smile:hover {
+    cursor: pointer;
+    color: var(--darker-bg-color);
+}
 .form-msg {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
+    align-items: center;
+    color:rgba(0, 0, 0, 0.734);
+}
+.form-msg button {
+    color:rgba(0, 0, 0, 0.734);
 }
 .form-msg button:hover {
     cursor: pointer;
@@ -195,3 +242,27 @@ input, button {
 #chkAllUsers:hover {
     cursor: pointer;
 }
+
+/* Apply to all scrollable elements */
+*::-webkit-scrollbar {
+    width: 4px; /* Set the width of the scrollbar */
+}
+
+*::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Track color */
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px; /* Optional: round the thumb edges */
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #555; 
+}
+/* FireFox :Apply to all scrollable elements */
+* {
+    scrollbar-width: thin; /* Make the scrollbar thin */
+    scrollbar-color: #888 #f1f1f1; /* Thumb color and track color */
+}
+

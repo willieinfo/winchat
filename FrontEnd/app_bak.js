@@ -1,13 +1,25 @@
+import { MessageBox } from "./functlib.js";
+
 const msgInput = document.querySelector('#message');
 const nameInput = document.querySelector('#name');
 const activity = document.querySelector('.activity');
 const userName = document.querySelector('.user-name');
 const chatDisplay = document.querySelector('.chat-display');
+const chatEraser = document.querySelector('#chatEraser')
 
-const socket = io('http://localhost:3000');
+const chatSmile = document.querySelector('#chat-smile')
+const chatImages = document.querySelector('#chat-images')
+const chatPaperClip = document.querySelector('#chat-paperclip')
+
+chatSmile.addEventListener('click', sendSmiley);
+chatPaperClip.addEventListener('click', send_a_File);
+chatImages.addEventListener('click', sendImage);
 
 document.querySelector('.form-msg').addEventListener('submit', sendMessage);
 document.querySelector('.form-join').addEventListener('submit', enterApp);
+
+
+const socket = io('http://localhost:3500');
 
 msgInput.addEventListener('keypress', () => {
     const sendAllUsers = document.querySelector('#sendAllUsers').checked;
@@ -64,7 +76,6 @@ socket.on('userList', ({ users }) => {
 
 function showUsers(users) {
     userName.innerHTML = '';
-    // user.name !== nameInput.value
     if (users) {
         users.forEach((user, i) => {
             if (user.name !== nameInput.value) { // Don't show self
@@ -109,6 +120,15 @@ function showUsers(users) {
                 userName.appendChild(userItem);
             }
         });
+
+
+        chatEraser.addEventListener('click', () => {
+            const room = selectedUser ? getPrivateRoomId(nameInput.value, selectedUser.name) : null;
+            deleteMessages(room);
+            chatDisplay.innerHTML = '';
+            updateChatDisplay('Chat history cleared');
+        });
+        
     }
 
     function getRandomColor() {
@@ -136,39 +156,42 @@ function showUsers(users) {
 
 }
 
-
 function sendMessage(e) {
     e.preventDefault();
+
     const sendAllUsers = document.querySelector('#sendAllUsers').checked;
-    let chatMessage = null
-    let room = null
-    
-    if (nameInput.value && msgInput.value) {
-        if (sendAllUsers) {
-            // Send to all users
-            chatMessage = {
-                name: nameInput.value,
-                text: msgInput.value,
-                date: getDate_Now(),
-                time: getTime_Now(),
-                room: null // No room for broadcast
-            } 
-        } else if (selectedUser) {
-            // Send to private room
-            room = getPrivateRoomId(nameInput.value, selectedUser.name);
-            chatMessage = {
-                name: nameInput.value,
-                text: msgInput.value,
-                date: getDate_Now(),
-                time: getTime_Now(),
-                room 
-            } 
-        }
-        socket.emit('message', chatMessage);
-        msgInput.value = '';
+
+    const name = nameInput.value.trim();
+    const message = msgInput.value.trim();
+    const hasSelectedUser = selectedUser && selectedUser.name;
+
+    // Check if all are empty or invalid
+    if (!name || !message || (!sendAllUsers && !hasSelectedUser)) {
+        console.log('Fill in all fields and select a user or check All Users.');
+        MessageBox('Fill in all fields and select a user or check All Users.','Ok');
+        msgInput.focus();
+        return;
     }
+
+    let room = null;
+    let chatMessage = {
+        name,
+        text: message,
+        date: getDate_Now(),
+        time: getTime_Now(),
+        room: null
+    };
+
+    if (!sendAllUsers && hasSelectedUser) {
+        room = getPrivateRoomId(name, selectedUser.name);
+        chatMessage.room = room;
+    }
+
+    socket.emit('message', chatMessage);
+    msgInput.value = '';
     msgInput.focus();
-    saveMessages(chatMessage,room)
+
+    saveMessages(chatMessage, room);
 }
 
 function enterApp(e) {
@@ -190,15 +213,9 @@ function getPrivateRoomId(user1, user2) {
     return [user1, user2].sort().join('_');
 }
 
-function saveMessages(data,room) {
-    let messages = JSON.parse(localStorage.getItem(`chatMessages_${room}`) || '[]');
-    messages.push(data);
-    localStorage.setItem(`chatMessages_${room}`, JSON.stringify(messages));
-}
-
 function getTime_Now() {
     const date = new Date()
-    cTime_Now= new Intl.DateTimeFormat('default', {
+    const cTime_Now= new Intl.DateTimeFormat('default', {
         hour: 'numeric',
         minute: 'numeric',
         second: 'numeric'
@@ -207,7 +224,7 @@ function getTime_Now() {
 }
 function getDate_Now() {
     const date = new Date()
-    cDate_Now= new Intl.DateTimeFormat('default', {
+    const cDate_Now= new Intl.DateTimeFormat('default', {
         year: 'numeric',
         month: 'numeric',
         day: 'numeric'
@@ -215,8 +232,13 @@ function getDate_Now() {
     return cDate_Now
 }
 
+// Loading, Saving, Deleting messages to / from localStorage
+function saveMessages(data,room) {
+    let messages = JSON.parse(localStorage.getItem(`chatMessages_${room}`) || '[]');
+    messages.push(data);
+    localStorage.setItem(`chatMessages_${room}`, JSON.stringify(messages));
+}
 
-// Add this function to load messages from localStorage
 function loadMessages(room) {
     const messages = JSON.parse(localStorage.getItem(`chatMessages_${room}`) || '[]');
     chatDisplay.innerHTML = ''; // Clear current chat display
@@ -224,6 +246,9 @@ function loadMessages(room) {
         const { name, text, time, room: messageRoom } = data;
         const fromUser = name === nameInput.value;
         const li = document.createElement('li');
+        
+        if (text.includes('Welcome') || text.includes('joined')) return
+        
         li.className = fromUser ? 'post post--right' : 'post post--left';
         if (name === 'Admin') {
             li.innerHTML = `<div class="post__admin">${text}</div>`;
@@ -243,4 +268,14 @@ function loadMessages(room) {
 
 function deleteMessages(room) {
     localStorage.removeItem(`chatMessages_${room}`);
+}
+
+function sendSmiley() {
+    console.log('Smiley is sent')    
+}
+function sendImage() {
+    console.log('Image is sent')    
+}
+function send_a_File() {
+    console.log('File is sent')    
 }

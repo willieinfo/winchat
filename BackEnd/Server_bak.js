@@ -10,7 +10,6 @@ const io = socketIo(server, {
         origin: ["http://localhost:3500", "http://127.0.0.1:5500"],
         methods: ["GET", "POST"],
     },
-    maxHttpBufferSize: 10e6 // 10MB limit for Socket.IO payloads
 });
 
 require('dotenv').config();
@@ -71,13 +70,13 @@ io.on('connection', socket => {
         }
     });
 
-    socket.on('message', ({ name, text, room, type, fileName }) => {
+    socket.on('message', ({ name, text, room }) => {
         if (room) {
             // Send to specific private room
-            io.to(room).emit('message', buildMsg(name, text, room, type, fileName));
+            io.to(room).emit('message', buildMsg(name, text, room));
         } else {
             // Broadcast to all users
-            io.emit('message', buildMsg(name, text, null, type, fileName));
+            io.emit('message', buildMsg(name, text, null));
         }
     });    
 
@@ -90,7 +89,7 @@ io.on('connection', socket => {
     });
 });
 
-function buildMsg(name, text, room = null, type = 'text', fileName = '') {
+function buildMsg(name, text, room = null) {
     return {
         name,
         text,
@@ -104,9 +103,7 @@ function buildMsg(name, text, room = null, type = 'text', fileName = '') {
             minute: 'numeric',
             second: 'numeric'
         }).format(new Date()),
-        room,
-        type,
-        fileName
+        room
     };
 }
 

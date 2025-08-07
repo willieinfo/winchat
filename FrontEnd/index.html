@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"
         integrity="sha512-Xm9qbB6Pu06k3PUwPj785dyTl6oHxgsv9nHp7ej7nCpAqGZT3OZpsELuCYX05DdonFpTlBpXMOxjavIAIUwr0w=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script defer src="/FrontEnd/app.js"></script>
 </head>
 <body>
     <div class="userList">
@@ -26,10 +25,18 @@
             <input type="text" id="name" maxlength="20" placeholder="Your name" size="20" required>
             <button id="join" type="submit">Join</button>
         </form>
-        <div class="utilityDiv"></div>
+        <div class="utilityDiv">
+            <i id="chatMobileFone" class="fas fa-phone-flip"></i>
+            <i id="chatEraser" class="fas fa-eraser"></i>
+        </div>
         <ul class="chat-display"></ul>
         <p class="activity"></p>
         <form class="form-msg">
+            <div class="chatAttachments">
+                <i id="chat-images" class="fas fa-images"></i>
+                <i id="chat-paperclip" class="fas fa-paperclip"></i>
+                <i id="chat-smile" class="fas fa-smile"></i>
+            </div>
             <input type="textarea" id="message" placeholder="Your message" required>
             <button type="submit"><i class="fas fa-paper-plane"></i> Send</button>
             <div id="chkAllUsers">
@@ -39,5 +46,10 @@
             
         </form>
     </main>
+
+    <script type="module" defer src="/FrontEnd/app.js"></script>
+    <!-- <script defer src="/FrontEnd/app.js"></script> -->
+
+
 </body>
 </html>
