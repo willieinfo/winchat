@@ -127,7 +127,7 @@ main {
     color:#555;
     align-items: center;
     gap: 10px;
-    overflow: auto;
+    overflow: none;
     color: rgba(128, 128, 128, 0.873);
 
 }
@@ -188,20 +188,20 @@ main {
     font-style: italic;
 }
 
-.chatAttachments {
+.chatAppIcons {
     display: flex;
     color: rgba(128, 128, 128, 0.873);
     gap: 10px;
+    font-size: larger;
+    align-items: center;
 }
-#chat-smile:hover {
-    cursor: pointer;
-    color: var(--darker-bg-color);
-}
+
 .form-msg {
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
     gap: 10px;
-    align-items: center;
+    align-items: flex-end;
     color:rgba(0, 0, 0, 0.734);
 }
 .form-msg button {
@@ -215,8 +215,67 @@ input, button {
     padding: 8px;
     font-size: 1em;
 }
-/* #message {
-} */
+
+
+.msg-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+.chatAppIcons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.textarea-wrapper {
+  position: relative;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+}
+
+#message {
+  width: 100%;
+  min-height: 1.5em;
+  max-height: 12em;
+  resize: none;
+  font-size: 16px;
+  padding: 10px 40px;
+  box-sizing: border-box;
+}
+
+/* Position emoji and mic inside textarea */
+#chat-smile {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+#voiceToText {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+/* Make sure the checkbox container stays compact */
+#chkAllUsers {
+  flex-shrink: 0;
+}
+
+/* Responsive: Wrap on small screens */
+@media screen and (max-width: 600px) {
+  .msg-row {
+    flex-wrap: wrap;
+  }
+}
+
 .activity {
     height: 20px;
     color: #888;
@@ -227,34 +286,93 @@ input, button {
 #chkAllUsers:hover {
     cursor: pointer;
 }
-
+/*  */
 .call-status {
     font-size: 14px;
     color: #555;
     margin-top: 8px;
     transition: opacity 0.3s ease;
 }
+.ringing-animation {
+    animation: ring 1s infinite;
+}
 
-.chatAttachments i {
+@keyframes ring {
+    0% { transform: rotate(0deg); }
+    10% { transform: rotate(15deg); }
+    20% { transform: rotate(-10deg); }
+    30% { transform: rotate(5deg); }
+    40% { transform: rotate(-5deg); }
+    50% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
+}
+/* for voice */
+@keyframes voicePulse {
+  0%   { transform: scale(1); opacity: 0.7; }
+  50%  { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.7; }
+}
+.voice-animate {
+  animation: voicePulse 0.8s infinite ease-in-out;
+  color: #4cafef; /* nice bluish tone */
+}
+/*  */
+.chatAppIcons i {
     transition: transform 0.2s ease, color 0.2s ease;
     cursor: pointer;
 }
 
-.chatAttachments i:hover {
-    transform: scale(1.3);  /* Grows the icon smoothly */
-    /* color: #007bff;          */
+.chatAppIcons i:hover {
+    transform: scale(1.3);
     color: var(--second-bg-color)
 }
 
 .icon-bubble {
-    display: inline-block;
-    padding: 6px;
-    border-radius: 50%;
-    transition: background 0.2s;
+  display: inline-flex; /* Use flex to center the icon */
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 50%;
+  transition: transform 0.2s ease, color 0.2s ease, background 0.2s;
+  cursor: pointer;
+  color: rgba(128, 128, 128, 0.873); /* Base color */
 }
 
 .icon-bubble:hover {
-    background: #f0f0f0;
+  transform: scale(1.3); /* Entire bubble grows */
+  color: var(--second-bg-color); /* Changes icon color */
+  background: #f0f0f0; /* Optional: highlight background */
+}
+
+/* .notification-badge {
+    background-color: #ff4d4f;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+} */
+
+.notification-badge {
+    background-color: #ff4d4f !important;
+    color: white !important;
+    border-radius: 50% !important;
+    padding: 2px 6px !important;
+    font-size: 12px !important;
+    position: absolute !important;
+    top: -5px !important;
+    right: -5px !important;
+    z-index: 1000 !important;
+}
+.userItem.notify {
+    animation: pulse 1s ease-in-out;
+}
+@keyframes pulse {
+    0% { background-color: transparent; }
+    50% { background-color: rgba(255, 77, 79, 0.2); }
+    100% { background-color: transparent; }
 }
 
 /* Apply to all scrollable elements */

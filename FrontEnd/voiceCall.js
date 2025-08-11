@@ -1,8 +1,11 @@
+// voiceCall.js
 let localStream;
 let peerConnection;
 let socketRef;
 let nameRef;
 let selectedUserRef;
+let callActive = false; // Track call state
+let ringingAnimation = null;
 
 const config = {
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -18,13 +21,24 @@ export function initVoiceCallFeatures({ socket, nameInput, selectedUserGetter })
     socketRef.on('ice-candidate', handleIceCandidate);
 
     const voiceCallBtn = document.getElementById('chatVoiceCall');
-    voiceCallBtn.addEventListener('click', handleVoiceCall);
+    voiceCallBtn.addEventListener('click', () => {
+        if (callActive) {
+            endCall();
+        } else {
+            handleVoiceCall();
+        }
+    });
 }
 
 async function handleVoiceCall() {
     const selectedUser = selectedUserRef();
     if (!selectedUser) {
         alert("Please select a user to call.");
+        return;
+    }
+
+    if (callActive) {
+        alert("You are already in a call.");
         return;
     }
 
@@ -52,14 +66,15 @@ async function handleVoiceCall() {
 
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
-
+        
+        playOutgoingRingtone()
         updateCallStatus(`Calling ${selectedUser.name}...`);
+        animatePhoneRinging(true);
 
         socketRef.emit('voice-offer', {
             target: selectedUser.name,
             offer
         });
-
 
     } catch (err) {
         console.error('Voice call error:', err);
@@ -69,10 +84,17 @@ async function handleVoiceCall() {
 }
 
 async function handleVoiceOffer({ from, offer }) {
+    if (callActive) {
+        // Reject if already in a call
+        socketRef.emit('voice-busy', { target: from });
+        return;
+    }
+
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        
+
         updateCallStatus(`Receiving call from ${from}...`);
+        animatePhoneRinging(true);
 
         peerConnection = new RTCPeerConnection(config);
         localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
@@ -101,6 +123,9 @@ async function handleVoiceOffer({ from, offer }) {
             target: from,
             answer
         });
+
+        setInCallUI();
+
     } catch (err) {
         console.error('Voice offer error:', err);
         alert(`Microphone access error: ${err.message}`);
@@ -109,15 +134,91 @@ async function handleVoiceOffer({ from, offer }) {
 
 async function handleVoiceAnswer({ answer }) {
     await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-    updateCallStatus(`In call`);
-
+    setInCallUI();
 }
 
 function handleIceCandidate({ candidate }) {
     peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
 }
 
+function endCall() {
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
+
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
+
+    callActive = false;
+    updateCallStatus("Call ended");
+    resetCallUI();
+}
+
+function setInCallUI() {
+    callActive = true;
+    stopOutgoingRingtone()
+    animatePhoneRinging(false);
+    const icon = document.querySelector('#chatVoiceCall i');
+    if (icon) {
+        icon.classList.remove('fa-phone-flip');
+        icon.classList.add('fa-phone-slash');
+    }
+    updateCallStatus("In call");
+}
+
+function resetCallUI() {
+    animatePhoneRinging(false);
+    const icon = document.querySelector('#chatVoiceCall i');
+    if (icon) {
+        icon.classList.remove('fa-phone-slash');
+        icon.classList.add('fa-phone-flip');
+    }
+}
+
+function animatePhoneRinging(enable) {
+    const icon = document.querySelector('#chatVoiceCall i');
+    if (!icon) return;
+
+    if (enable) {
+        icon.classList.add('ringing-animation');
+    } else {
+        icon.classList.remove('ringing-animation');
+    }
+}
+
 function updateCallStatus(msg) {
     const statusDiv = document.querySelector('.activity');
     if (statusDiv) statusDiv.textContent = msg;
+}
+
+// 
+function playOutgoingRingtone() {
+    const audio = new Audio('/sounds/ringtone.mp3');
+    audio.loop = true;
+    audio.play().catch(() => {}); // ignore autoplay restrictions
+    window._outgoingTone = audio;
+}
+
+function stopOutgoingRingtone() {
+    if (window._outgoingTone) {
+        window._outgoingTone.pause();
+        window._outgoingTone = null;
+    }
+}
+
+function playIncomingRingtone() {
+    const audio = new Audio('/sounds/incoming.mp3');
+    audio.loop = true;
+    audio.play().catch(() => {});
+    window._incomingTone = audio;
+}
+
+function stopIncomingRingtone() {
+    if (window._incomingTone) {
+        window._incomingTone.pause();
+        window._incomingTone = null;
+    }
 }

@@ -23,9 +23,10 @@
     <main>
         <form class="form-join">
             <input type="text" id="name" maxlength="20" placeholder="Your name" size="20" required>
-            <button id="join" type="submit" title="Enter Chat"><i class="fa-solid fa-user-plus"></i> Join</button>
+            <button id="join" type="submit" title="Enter Chat"><i class="fa-solid fa-user-plus"></i></button>
         </form>
-        <div class="utilityDiv chatAttachments">
+        <div class="utilityDiv chatAppIcons">
+            <!-- phone-slash for hung up fone -->
             <span id="chatVoiceCall" class="icon-bubble"><i class="fas fa-phone-flip" title="Make a voice call"></i></span>
             <span id="chatEraser" class="icon-bubble"><i class="fas fa-eraser" title="Erase Chat messages"></i></span>
         </div>
@@ -34,23 +35,45 @@
         <div id="callStatus" class="call-status"></div>
 
         <form class="form-msg">
-            <div class="chatAttachments">
-                <span id="chat-images" class="icon-bubble"><i class="fas fa-images" title="Attach image"></i></span>
-                <span id="chat-paperclip" class="icon-bubble"><i class="fas fa-paperclip" title="Attach file"></i></span>
-                <span id="chat-smile" class="icon-bubble"><i class="fas fa-smile" title="Add emoji"></i></span>
-            </div>
+            <div class="msg-row">
+                <div class="chatAppIcons">
+                    <span id="chat-images" class="icon-bubble">
+                        <i class="fas fa-images" title="Attach image"></i>
+                    </span>
+                    <span id="chat-paperclip" class="icon-bubble">
+                        <i class="fas fa-paperclip" title="Attach file"></i>
+                    </span>
+                </div>
 
-            <input type="textarea" id="message" placeholder="Your message" required>
-            <button type="submit"><i class="fas fa-paper-plane"></i> Send</button>
-            <div id="chkAllUsers">
-                <input type="checkbox" id="sendAllUsers" >
-                <label for="sendAllUsers">All Users</label>
+                <div class="textarea-wrapper chatAppIcons">
+                    <span id="chat-smile" class="icon-bubble">
+                        <i class="fas fa-smile" title="Add emoji"></i>
+                    </span>
+                    <textarea id="message" placeholder="Your message" required autofocus></textarea>
+                    <span id="voiceToText" class="icon-bubble">
+                        <i class="fas fa-microphone" title="Say your message"></i>
+                        <!-- <i class="fas fa-signal voice-animate" style="display: none" id="signal-icon"; title="Say your message"></i> -->
+                        <!-- <i class="fas fa-volume-high voice-animate"></i> -->
+                        <!-- <i class="fas fa-wave-square voice-animate"></i> -->
+                        
+                    </span>
+                </div>
+                <button type="submit" title="Send Message" id="sendMessage">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+                <div id="chkAllUsers" class="chatAppIcons">
+                    <input type="checkbox" id="sendAllUsers">
+                    <label for="sendAllUsers">
+                        <i class="fa-solid fa-users" title="Send to all users"></i>
+                    </label>
+                </div>
             </div>
-            
         </form>
+
     </main>
 
     <script type="module" defer src="/FrontEnd/app.js"></script>
+    <script type="module" defer src="/FrontEnd/voiceToText.js"></script>
     <!-- <script defer src="/FrontEnd/app.js"></script> -->
 
 
