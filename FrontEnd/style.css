@@ -77,6 +77,8 @@ body {
     display: flex;
     align-items: center;  /* Vertically center the icon and name */
     justify-content: flex-start;  /* Align items from left to right */
+    position: relative;
+
 }
 .userItem:hover {
     background: #e0e0e0;
@@ -102,6 +104,7 @@ body {
     border-radius: 50%;
     border: 1px solid;
     margin-right: 10px;  /* Add space between icon and name */
+    position: relative;
 }
 
 
@@ -355,17 +358,39 @@ input, button {
     right: -5px;
 } */
 
+ /* .userIcon {
+    position: relative; 
+    display: inline-block;
+}
+
 .notification-badge {
-    background-color: #ff4d4f !important;
-    color: white !important;
-    border-radius: 50% !important;
-    padding: 2px 6px !important;
-    font-size: 12px !important;
-    position: absolute !important;
-    top: -5px !important;
-    right: -5px !important;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ff4d4f;
+    color: #fff;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    z-index: 1000 !important;
+}  */
+
+/* .userItem {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    position: relative;
+} */
+
+.notification-badge {
+    background-color: #ff4d4f;
+    color: #fff;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
     z-index: 1000 !important;
 }
+
 .userItem.notify {
     animation: pulse 1s ease-in-out;
 }
@@ -373,6 +398,14 @@ input, button {
     0% { background-color: transparent; }
     50% { background-color: rgba(255, 77, 79, 0.2); }
     100% { background-color: transparent; }
+}
+@keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+.notification-badge.pop {
+    animation: pop 0.3s ease;
 }
 
 /* Apply to all scrollable elements */

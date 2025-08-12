@@ -54,6 +54,7 @@ const PendingMessages = {
     }
 };
 
+
 io.on('connection', socket => {
     socket.emit('message', buildMsg(SYSTEM, "Welcome to WinChat!"));
 
@@ -89,7 +90,7 @@ io.on('connection', socket => {
         UsersState.setUsers([...UsersState.users]);
 
         socket.join(room);
-        socket.emit('message', buildMsg(SYSTEM, `You have started a chat with ${targetUser}`));
+        // socket.emit('message', buildMsg(SYSTEM, `You have started a chat with ${targetUser}`));
 
         // Deliver any pending messages for this room
         const targetUserId = getUserSocketIdByName(targetUser);
@@ -151,6 +152,7 @@ io.on('connection', socket => {
             io.emit('message', message);
         }
     });
+
 
     socket.on('activity', ({ name, room }) => {
         if (room) {

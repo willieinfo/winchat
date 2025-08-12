@@ -1,4 +1,3 @@
-// app.js
 import { MessageBox } from "./functlib.js";
 import { initVoiceCallFeatures } from './voiceCall.js';
 
@@ -81,17 +80,14 @@ socket.on("activity", (name) => {
 });
 
 socket.on('notification', ({ from, room }) => {
-    console.log(`Notification received from ${from} for room ${room}`);
     socket.emit('requestUserList');
 });
 
 socket.on('userList', ({ users, pendingMessages }) => {
-    console.log('Received userList:', { users, pendingMessages });
     showUsers(users, pendingMessages);
 });
 
 function showUsers(users, pendingMessages) {
-    console.log('Rendering users with pendingMessages:', pendingMessages);
     userName.innerHTML = '';
     if (users) {
         users.forEach((user) => {
@@ -106,8 +102,11 @@ function showUsers(users, pendingMessages) {
                 userIcon.style.backgroundColor = getRandomColor();
 
                 // Add notification badge if there are pending messages
-                const pendingCount = pendingMessages && pendingMessages[user.name] && pendingMessages[user.name][nameInput.value] || 0;
-                console.log(`Pending messages for ${user.name} from ${nameInput.value}: ${pendingCount}`);
+                const pendingCount =
+                    pendingMessages &&
+                    pendingMessages[nameInput.value] &&
+                    pendingMessages[nameInput.value][user.name] || 0;
+
                 if (pendingCount > 0) {
                     const badge = document.createElement('span');
                     badge.className = 'notification-badge';
@@ -121,7 +120,10 @@ function showUsers(users, pendingMessages) {
                     badge.style.top = '-5px';
                     badge.style.right = '-5px';
                     badge.style.zIndex = '10'; // Ensure badge is visible
+                    badge.classList.add('pop');
+                    setTimeout(() => badge.classList.remove('pop'), 300);                    
                     userIcon.appendChild(badge);
+
                 }
 
                 if (selectedUser && selectedUser.name === user.name) {
@@ -166,96 +168,7 @@ function clearChatHandler() {
     chatDisplay.innerHTML = '';
     updateChatDisplay('Chat history cleared');
 }
-    // socket.on('userList', ({ users, pendingMessages }) => {
-    //     showUsers(users, pendingMessages);
-    // });
-
-    // socket.on('notification', ({ from, room }) => {
-    //     // Update user list to reflect new notification
-    //     socket.emit('requestUserList'); // Request updated user list
-    // });
-
-    // // Request user list to refresh notifications
-    // socket.on('connect', () => {
-    //     if (nameInput.value) {
-    //         socket.emit('enterApp', { name: nameInput.value });
-    //     }
-    // });
-
-    // function showUsers(users, pendingMessages) {
-    //     userName.innerHTML = '';
-    //     if (users) {
-    //         users.forEach((user) => {
-    //             if (user.name !== nameInput.value) { // Don't show self
-    //                 const userItem = document.createElement('li');
-    //                 userItem.className = 'userItem';
-
-    //                 const initials = getUserInitials(user.name);
-    //                 const userIcon = document.createElement('div');
-    //                 userIcon.className = 'userIcon';
-    //                 userIcon.innerHTML = initials;
-    //                 userIcon.style.backgroundColor = getRandomColor();
-
-    //                 // Add notification badge if there are pending messages
-    //                 const pendingCount = pendingMessages[user.name] && pendingMessages[user.name][nameInput.value] || 0;
-    //                 if (pendingCount > 0) {
-    //                     const badge = document.createElement('span');
-    //                     badge.className = 'notification-badge';
-    //                     badge.textContent = pendingCount;
-    //                     badge.style.backgroundColor = '#ff4d4f';
-    //                     badge.style.color = '#fff';
-    //                     badge.style.borderRadius = '50%';
-    //                     badge.style.padding = '2px 6px';
-    //                     badge.style.fontSize = '12px';
-    //                     badge.style.position = 'absolute';
-    //                     badge.style.top = '-5px';
-    //                     badge.style.right = '-5px';
-    //                     userIcon.appendChild(badge);
-    //                 }
-
-    //                 if (selectedUser && selectedUser.name === user.name) {
-    //                     userItem.classList.add('selected');
-    //                 }
-
-    //                 userItem.addEventListener('click', () => {
-    //                     selectedUser = user;
-    //                     chatDisplay.innerHTML = '';
-    //                     userName.querySelectorAll('.userItem').forEach(item => item.classList.remove('selected'));
-    //                     userItem.classList.add('selected');
-
-    //                     activity.textContent = `Chatting with ${user.name}`;
-    //                     const room = getPrivateRoomId(nameInput.value, user.name);
-    //                     socket.emit('joinPrivateRoom', {
-    //                         name: nameInput.value,
-    //                         targetUser: user.name
-    //                     });
-
-    //                     loadMessages(room);
-    //                     updateChatDisplay(`Started chat with ${user.name}`);
-    //                 });
-
-    //                 userItem.appendChild(userIcon);
-    //                 const userNameText = document.createElement('span');
-    //                 userNameText.textContent = user.name;
-    //                 userItem.appendChild(userNameText);
-
-    //                 userName.appendChild(userItem);
-    //             }
-    //         });
-    //     }
-
-    //     chatEraser.addEventListener('click', () => {
-    //         const room = selectedUser ? getPrivateRoomId(nameInput.value, selectedUser.name) : null;
-    //         deleteMessages(room);
-    //         chatDisplay.innerHTML = '';
-    //         updateChatDisplay('Chat history cleared');
-    //     });
-    // }
-
-// ... (rest of the functions remain unchanged: getRandomColor, getUserInitials, updateChatDisplay, sendMessage,
-//  enterApp, getPrivateRoomId, getTime_Now, getDate_Now, saveMessages, loadMessages, deleteMessages, sendSmiley,
-//  sendImage, send_a_File)
-
+    
 function getRandomColor() {
     const letters = '0123456789ABCDEF';
     let color = '#';
