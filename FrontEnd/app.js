@@ -144,7 +144,7 @@ function showUsers(users, pendingMessages) {
                     });
 
                     loadMessages(room);
-                    updateChatDisplay(`Started chat with ${user.name}`);
+                    // updateChatDisplay(`Started chat with ${user.name}`);
                 });
 
                 userItem.appendChild(userIcon);

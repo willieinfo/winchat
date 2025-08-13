@@ -83,10 +83,20 @@ async function handleVoiceCall() {
     }
 }
 
+
 async function handleVoiceOffer({ from, offer }) {
     if (callActive) {
         // Reject if already in a call
         socketRef.emit('voice-busy', { target: from });
+        return;
+    }
+
+    // Prompt user to accept or reject the call
+    const userWantsToAnswer = confirm(`Incoming call from ${from}. Do you accept?`);
+
+    if (!userWantsToAnswer) {
+        // Emit a reject signal if the user declines the call
+        socketRef.emit('voice-reject', { target: from });
         return;
     }
 
@@ -131,6 +141,13 @@ async function handleVoiceOffer({ from, offer }) {
         alert(`Microphone access error: ${err.message}`);
     }
 }
+
+socketRef.on('voice-rejected', ({ message }) => {
+    alert(message);  // or use a UI element to show the rejection
+    stopOutgoingRingtone();
+    resetCallUI();
+});
+
 
 async function handleVoiceAnswer({ answer }) {
     await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));

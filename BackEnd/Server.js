@@ -162,13 +162,22 @@ io.on('connection', socket => {
         }
     });
 
-    // Voice call handlers remain unchanged
+    // Voice call handlers 
     socket.on('voice-offer', ({ target, offer }) => {
         const targetSocket = getUserSocketIdByName(target);
         if (targetSocket) {
             io.to(targetSocket).emit('voice-offer', {
                 from: getUser(socket.id).name,
                 offer
+            });
+        }
+    });
+
+    socket.on('voice-reject', ({ target }) => {
+        const targetSocket = getUserSocketIdByName(target);
+        if (targetSocket) {
+            io.to(targetSocket).emit('voice-rejected', {
+                message: "The call was rejected."
             });
         }
     });
