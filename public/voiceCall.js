@@ -20,6 +20,13 @@ export function initVoiceCallFeatures({ socket, nameInput, selectedUserGetter })
     socketRef.on('voice-answer', handleVoiceAnswer);
     socketRef.on('ice-candidate', handleIceCandidate);
 
+    socketRef.on('voice-rejected', ({ message }) => {
+        alert(message);  // or use a UI element to show the rejection
+        stopOutgoingRingtone();
+        resetCallUI();
+    });
+
+
     const voiceCallBtn = document.getElementById('chatVoiceCall');
     voiceCallBtn.addEventListener('click', () => {
         if (callActive) {
@@ -141,13 +148,6 @@ async function handleVoiceOffer({ from, offer }) {
         alert(`Microphone access error: ${err.message}`);
     }
 }
-
-socketRef.on('voice-rejected', ({ message }) => {
-    alert(message);  // or use a UI element to show the rejection
-    stopOutgoingRingtone();
-    resetCallUI();
-});
-
 
 async function handleVoiceAnswer({ answer }) {
     await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));

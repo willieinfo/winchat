@@ -1,0 +1,18 @@
+project-root/
+│
+├─ api/              ← Vercel serverless functions go here
+│   └─ server.js     ← your backend code (modified)
+│
+├─ public/           ← your frontend static files
+│   ├─ index.html
+│   ├─ app.js
+│   ├─ functlib.js
+│   ├─ style.css
+│   ├─ favicon.ico
+│   ├─ voiceCall.js
+│   └─ voiceToText.js
+│
+├─ .gitignore
+├─ package.json
+├─ vercel.json
+└─ .env

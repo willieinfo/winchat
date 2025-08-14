@@ -18,10 +18,10 @@ require('dotenv').config();
 const PORT = process.env.PORT || 3500;
 const SYSTEM = "Admin";
 
-app.use(express.static(path.join(__dirname, '../FrontEnd')));
+app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../FrontEnd', 'index.html'));
+    res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 
 const UsersState = {
