@@ -93,7 +93,7 @@ function processUsersLog(logData) {
     }));
 }
 
-    async function loadActiveUsersFromDB(currentUserName = '') {
+async function loadActiveUsersFromDB(currentUserName = '') {
     try {
         const dDate_Log = new Date().toISOString().split('T')[0]; // today
         const dbUsers = await fetchActiveUsers(dDate_Log);
@@ -104,8 +104,6 @@ function processUsersLog(logData) {
         room: s.data?.room || null
         }));
 
-//     // DB users
-//     const dbUsers = await fetchActiveUsers(dDate_Log);
         const dbUserMap = {};
         dbUsers.forEach(u => {
         dbUserMap[u.UserName] = {
@@ -128,17 +126,6 @@ function processUsersLog(logData) {
         const mergedUsers = Object.values(dbUserMap);
 
 
-        // const mergedUsers = [...socketUsers];
-        // dbUsers.forEach(dbUser => {
-        // if (!mergedUsers.some(u => u.name === dbUser.UserName)) {
-        //     mergedUsers.push({
-        //     id: `db-${dbUser.UserName}`,
-        //     name: dbUser.UserName,
-        //     room: getPrivateRoomId(dbUser.UserName, currentUserName || 'Server')
-        //     });
-        // }
-        // });
-
         if (!currentUserName) {
         io.emit('userList', {
             users: mergedUsers,
@@ -155,11 +142,6 @@ function processUsersLog(logData) {
         }
         }
 
-        // Only emit if called from server startup (no currentUserName provided)
-        // if (!currentUserName) {
-        //     io.emit('userList', { users: mergedUsers });
-        // }
-
 
         return mergedUsers;
 
@@ -167,118 +149,10 @@ function processUsersLog(logData) {
         console.error("Error loading active users from DB:", err);
         return [];
     }
-    }
+}
 
 
-// ✅ Always returns merged users
-// async function loadActiveUsersFromDB(io, currentUserName = '') {
-//   try {
-//     // 1️⃣ Fetch from DB (all active users)
-//     const dDate_Log = new Date();
-//     dDate_Log.setHours(0, 0, 0, 0); // today only
-//     const dbUsers = await fetchActiveUsers(dDate_Log);
 
-//     // 2️⃣ Map DB users into normalized format
-//     const dbUserMap = {};
-//     dbUsers.forEach(u => {
-//       dbUserMap[u.UserName] = {
-//         id: null, // No socket yet
-//         name: u.UserName,
-//         room: '_Server', // default room for display
-//         online: false
-//       };
-//     });
-
-//     // 3️⃣ Merge with connected socket users
-//     for (const [id, socket] of io.sockets.sockets) {
-//       const name = socket.data?.name || null;
-//       if (!name) continue;
-
-//       dbUserMap[name] = {
-//         id,
-//         name,
-//         room: socket.data?.room || '_Server',
-//         online: true
-//       };
-//     }
-
-//     // 4️⃣ Final merged list
-//     const mergedUsers = Object.values(dbUserMap);
-
-//     // 5️⃣ Emit only if no currentUserName (startup broadcast)
-//     if (!currentUserName) {
-//       io.emit('userList', { users: mergedUsers });
-//     } else {
-//       // Send only to requester
-//       const requesterSocket = [...io.sockets.sockets.values()]
-//         .find(s => s.data?.name === currentUserName);
-//       if (requesterSocket) {
-//         requesterSocket.emit('userList', { users: mergedUsers });
-//       }
-//     }
-
-//     return mergedUsers;
-//   } catch (err) {
-//     console.error("Error loading active users from DB:", err);
-//     return [];
-//   }
-// }
-
-// async function loadActiveUsersFromDB(io, currentUserName = '') {
-//   try {
-//     const dDate_Log = new Date();
-//     dDate_Log.setHours(0, 0, 0, 0); // today's date
-
-//     // DB users
-//     const dbUsers = await fetchActiveUsers(dDate_Log);
-//     const dbUserMap = {};
-//     dbUsers.forEach(u => {
-//       dbUserMap[u.UserName] = {
-//         id: null,
-//         name: u.UserName,
-//         room: '_Server', // default unless overwritten
-//         online: false
-//       };
-//     });
-
-//     // Merge with connected users from UsersState
-//     UsersState.users.forEach(u => {
-//       dbUserMap[u.name] = {
-//         id: u.id,
-//         name: u.name,
-//         room: u.room || '_Server',
-//         online: true
-//       };
-//     });
-
-//     const mergedUsers = Object.values(dbUserMap);
-
-//     if (!currentUserName) {
-//       io.emit('userList', {
-//         users: mergedUsers,
-//         pendingMessages: getPendingMessagesForAllUsers()
-//       });
-//     } else {
-//       const requesterSocket = [...io.sockets.sockets.values()]
-//         .find(s => s.data?.name === currentUserName);
-//       if (requesterSocket) {
-//         requesterSocket.emit('userList', {
-//           users: mergedUsers,
-//           pendingMessages: getPendingMessagesForAllUsers()
-//         });
-//       }
-//     }
-
-//     console.log(mergedUsers)
-//     return mergedUsers;
-//   } catch (err) {
-//     console.error("Error loading active users from DB:", err);
-//     return [];
-//   }
-// }
-
-
-// utils.js or inside your socket.js
 // New merged user list function
 async function getMergedActiveUsers(pool, io, currentUserName) {
     try {
