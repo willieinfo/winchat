@@ -20,6 +20,12 @@ document.querySelector('.form-msg').addEventListener('submit', sendMessage);
 document.querySelector('.form-join').addEventListener('submit', enterApp);
 
 const socket = io('http://localhost:3500');
+// const socket = io(
+//     window.location.hostname === 'localhost'
+//         ? 'http://localhost:3500'
+//         : 'https://winchat.onrender.com'
+// );
+
 
 let selectedUser = null;
 
@@ -87,77 +93,93 @@ socket.on('userList', ({ users, pendingMessages }) => {
     showUsers(users, pendingMessages);
 });
 
+
 function showUsers(users, pendingMessages) {
-    userName.innerHTML = '';
-    if (users) {
-        users.forEach((user) => {
-            if (user.name !== nameInput.value) {
-                const userItem = document.createElement('li');
-                userItem.className = 'userItem';
+    if (!users) return;
 
-                const initials = getUserInitials(user.name);
-                const userIcon = document.createElement('div');
-                userIcon.className = 'userIcon';
-                userIcon.innerHTML = initials;
-                userIcon.style.backgroundColor = getRandomColor();
+    // Map existing usernames in DOM
+    const existingUserNames = Array.from(userName.querySelectorAll('.userItem'))
+        .map(item => item.dataset.username);
 
-                // Add notification badge if there are pending messages
-                const pendingCount =
-                    pendingMessages &&
-                    pendingMessages[nameInput.value] &&
-                    pendingMessages[nameInput.value][user.name] || 0;
+    // Build a quick lookup for incoming user list
+    const incomingNames = users.map(u => u.name);
 
-                if (pendingCount > 0) {
-                    const badge = document.createElement('span');
-                    badge.className = 'notification-badge';
-                    badge.textContent = pendingCount;
-                    badge.style.backgroundColor = '#ff4d4f';
-                    badge.style.color = '#fff';
-                    badge.style.borderRadius = '50%';
-                    badge.style.padding = '2px 6px';
-                    badge.style.fontSize = '12px';
-                    badge.style.position = 'absolute';
-                    badge.style.top = '-5px';
-                    badge.style.right = '-5px';
-                    badge.style.zIndex = '10'; // Ensure badge is visible
-                    badge.classList.add('pop');
-                    setTimeout(() => badge.classList.remove('pop'), 300);                    
-                    userIcon.appendChild(badge);
+    // Remove only users who are not in the list at all
+    // (They must be gone from server *and* offline)
+    userName.querySelectorAll('.userItem').forEach(item => {
+        const username = item.dataset.username;
+        if (!incomingNames.includes(username)) {
+            item.remove();
+        }
+    });
 
-                }
+    // Merge: add new users or update existing ones
+    users.forEach((user) => {
+        if (user.name === nameInput.value) return; // skip self
 
-                if (selectedUser && selectedUser.name === user.name) {
-                    userItem.classList.add('selected');
-                }
+        let userItem = userName.querySelector(`.userItem[data-username="${user.name}"]`);
+        if (!userItem) {
+            // --- Create a new DOM element for the user ---
+            userItem = document.createElement('li');
+            userItem.className = 'userItem';
+            userItem.dataset.username = user.name;
 
-                userItem.addEventListener('click', () => {
-                    selectedUser = user;
-                    chatDisplay.innerHTML = '';
-                    userName.querySelectorAll('.userItem').forEach(item => item.classList.remove('selected'));
-                    userItem.classList.add('selected');
+            const initials = getUserInitials(user.name);
+            const userIcon = document.createElement('div');
+            userIcon.className = 'userIcon';
+            userIcon.innerHTML = initials;
+            userIcon.style.backgroundColor = getUserColor(user.name);
 
-                    activity.textContent = `Chatting with ${user.name}`;
-                    const room = getPrivateRoomId(nameInput.value, user.name);
-                    socket.emit('joinPrivateRoom', {
-                        name: nameInput.value,
-                        targetUser: user.name
-                    });
+            // Add notification badge
+            const pendingCount =
+                pendingMessages?.[nameInput.value]?.[user.name] || 0;
 
-                    loadMessages(room);
-                    // updateChatDisplay(`Started chat with ${user.name}`);
-                });
-
-                userItem.appendChild(userIcon);
-                const userNameText = document.createElement('span');
-                userNameText.textContent = user.name;
-                userItem.appendChild(userNameText);
-
-                userName.appendChild(userItem);
+            if (pendingCount > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'notification-badge';
+                badge.textContent = pendingCount;
+                badge.style.backgroundColor = '#ff4d4f';
+                badge.style.color = '#fff';
+                badge.style.borderRadius = '50%';
+                badge.style.padding = '2px 6px';
+                badge.style.fontSize = '12px';
+                badge.style.position = 'absolute';
+                badge.style.top = '-5px';
+                badge.style.right = '-5px';
+                badge.style.zIndex = '10';
+                badge.classList.add('pop');
+                setTimeout(() => badge.classList.remove('pop'), 300);
+                userIcon.appendChild(badge);
             }
-        });
-    }
 
-    // Remove and reattach chatEraser event listener to avoid duplicates
+            userItem.appendChild(userIcon);
+            const userNameText = document.createElement('span');
+            userNameText.textContent = user.name;
+            userItem.appendChild(userNameText);
+
+            userItem.addEventListener('click', () => {
+                selectedUser = user;
+                chatDisplay.innerHTML = '';
+                userName.querySelectorAll('.userItem').forEach(item => item.classList.remove('selected'));
+                userItem.classList.add('selected');
+                activity.textContent = `Chatting with ${user.name}`;
+                const room = getPrivateRoomId(nameInput.value, user.name);
+                socket.emit('joinPrivateRoom', { name: nameInput.value, targetUser: user.name });
+                loadMessages(room);
+            });
+
+            userName.appendChild(userItem);
+        }
+
+        // Keep selected state
+        if (selectedUser && selectedUser.name === user.name) {
+            userItem.classList.add('selected');
+        } else {
+            userItem.classList.remove('selected');
+        }
+    });
+
+    // Keep chatEraser bound
     chatEraser.removeEventListener('click', clearChatHandler);
     chatEraser.addEventListener('click', clearChatHandler);
 }
@@ -169,11 +191,18 @@ function clearChatHandler() {
     updateChatDisplay('Chat history cleared');
 }
     
-function getRandomColor() {
-    const letters = '0123456789ABCDEF';
+function getUserColor(username) {
+    // Simple hash from string
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // Convert hash to hex color
     let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
+    for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xFF;
+        color += ('00' + value.toString(16)).slice(-2);
     }
     return color;
 }

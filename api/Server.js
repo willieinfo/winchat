@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -6,23 +5,40 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
+
+const { connectToDatabase, fetchActiveUsers } = require('./dbConnect.js');
+
+const allowedOrigins = [
+    "http://localhost:3500",
+    "http://127.0.0.1:5500",
+    process.env.RENDER_URL // e.g. https://winchat.onrender.com
+];
+
 const io = socketIo(server, {
     cors: {
-        origin: ["http://localhost:3500", "http://127.0.0.1:5500"],
-        methods: ["GET", "POST"],
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
+        methods: ["GET", "POST"]
     },
     maxHttpBufferSize: 10e6
 });
-
-require('dotenv').config();
-const PORT = process.env.PORT || 3500;
-const SYSTEM = "Admin";
 
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
+
+
+require('dotenv').config();
+const PORT = process.env.PORT || 3500;
+const SYSTEM = "Admin";
+
 
 const UsersState = {
     users: [],
@@ -54,16 +70,300 @@ const PendingMessages = {
     }
 };
 
+// ====================
+// 🟢 Load active users from DB
+function processUsersLog(logData) {
+    const activeUsers = new Set();
 
-io.on('connection', socket => {
-    socket.emit('message', buildMsg(SYSTEM, "Welcome to WinChat!"));
+    logData.forEach(entry => {
+        const user = entry.UserName.trim();
+        if (!user) return;
 
-    socket.on('requestUserList', () => {
-        socket.emit('userList', {
-            users: getAllUsers(),
+        if (entry.LogInOut === 1) {
+            activeUsers.add(user);
+        } else if (entry.LogInOut === 2) {
+            activeUsers.delete(user);
+        }
+    });
+
+    return Array.from(activeUsers).map(name => ({
+        id: null,  // will be set when a socket joins
+        name,
+        room: null
+    }));
+}
+
+    async function loadActiveUsersFromDB(currentUserName = '') {
+    try {
+        const dDate_Log = new Date().toISOString().split('T')[0]; // today
+        const dbUsers = await fetchActiveUsers(dDate_Log);
+
+        const socketUsers = Array.from(io.sockets.sockets.values()).map(s => ({
+        id: s.id,
+        name: s.data?.name || '',
+        room: s.data?.room || null
+        }));
+
+//     // DB users
+//     const dbUsers = await fetchActiveUsers(dDate_Log);
+        const dbUserMap = {};
+        dbUsers.forEach(u => {
+        dbUserMap[u.UserName] = {
+            id: null,
+            name: u.UserName,
+            room: '_Server', // default unless overwritten
+            online: false
+        };
+        });
+
+        UsersState.users.forEach(u => {
+        dbUserMap[u.name] = {
+            id: u.id,
+            name: u.name,
+            room: u.room || '_Server',
+            online: true
+        };
+        });
+
+        const mergedUsers = Object.values(dbUserMap);
+
+
+        // const mergedUsers = [...socketUsers];
+        // dbUsers.forEach(dbUser => {
+        // if (!mergedUsers.some(u => u.name === dbUser.UserName)) {
+        //     mergedUsers.push({
+        //     id: `db-${dbUser.UserName}`,
+        //     name: dbUser.UserName,
+        //     room: getPrivateRoomId(dbUser.UserName, currentUserName || 'Server')
+        //     });
+        // }
+        // });
+
+        if (!currentUserName) {
+        io.emit('userList', {
+            users: mergedUsers,
             pendingMessages: getPendingMessagesForAllUsers()
         });
+        } else {
+        const requesterSocket = [...io.sockets.sockets.values()]
+            .find(s => s.data?.name === currentUserName);
+        if (requesterSocket) {
+            requesterSocket.emit('userList', {
+            users: mergedUsers,
+            pendingMessages: getPendingMessagesForAllUsers()
+            });
+        }
+        }
+
+        // Only emit if called from server startup (no currentUserName provided)
+        // if (!currentUserName) {
+        //     io.emit('userList', { users: mergedUsers });
+        // }
+
+
+        return mergedUsers;
+
+    } catch (err) {
+        console.error("Error loading active users from DB:", err);
+        return [];
+    }
+    }
+
+
+// ✅ Always returns merged users
+// async function loadActiveUsersFromDB(io, currentUserName = '') {
+//   try {
+//     // 1️⃣ Fetch from DB (all active users)
+//     const dDate_Log = new Date();
+//     dDate_Log.setHours(0, 0, 0, 0); // today only
+//     const dbUsers = await fetchActiveUsers(dDate_Log);
+
+//     // 2️⃣ Map DB users into normalized format
+//     const dbUserMap = {};
+//     dbUsers.forEach(u => {
+//       dbUserMap[u.UserName] = {
+//         id: null, // No socket yet
+//         name: u.UserName,
+//         room: '_Server', // default room for display
+//         online: false
+//       };
+//     });
+
+//     // 3️⃣ Merge with connected socket users
+//     for (const [id, socket] of io.sockets.sockets) {
+//       const name = socket.data?.name || null;
+//       if (!name) continue;
+
+//       dbUserMap[name] = {
+//         id,
+//         name,
+//         room: socket.data?.room || '_Server',
+//         online: true
+//       };
+//     }
+
+//     // 4️⃣ Final merged list
+//     const mergedUsers = Object.values(dbUserMap);
+
+//     // 5️⃣ Emit only if no currentUserName (startup broadcast)
+//     if (!currentUserName) {
+//       io.emit('userList', { users: mergedUsers });
+//     } else {
+//       // Send only to requester
+//       const requesterSocket = [...io.sockets.sockets.values()]
+//         .find(s => s.data?.name === currentUserName);
+//       if (requesterSocket) {
+//         requesterSocket.emit('userList', { users: mergedUsers });
+//       }
+//     }
+
+//     return mergedUsers;
+//   } catch (err) {
+//     console.error("Error loading active users from DB:", err);
+//     return [];
+//   }
+// }
+
+// async function loadActiveUsersFromDB(io, currentUserName = '') {
+//   try {
+//     const dDate_Log = new Date();
+//     dDate_Log.setHours(0, 0, 0, 0); // today's date
+
+//     // DB users
+//     const dbUsers = await fetchActiveUsers(dDate_Log);
+//     const dbUserMap = {};
+//     dbUsers.forEach(u => {
+//       dbUserMap[u.UserName] = {
+//         id: null,
+//         name: u.UserName,
+//         room: '_Server', // default unless overwritten
+//         online: false
+//       };
+//     });
+
+//     // Merge with connected users from UsersState
+//     UsersState.users.forEach(u => {
+//       dbUserMap[u.name] = {
+//         id: u.id,
+//         name: u.name,
+//         room: u.room || '_Server',
+//         online: true
+//       };
+//     });
+
+//     const mergedUsers = Object.values(dbUserMap);
+
+//     if (!currentUserName) {
+//       io.emit('userList', {
+//         users: mergedUsers,
+//         pendingMessages: getPendingMessagesForAllUsers()
+//       });
+//     } else {
+//       const requesterSocket = [...io.sockets.sockets.values()]
+//         .find(s => s.data?.name === currentUserName);
+//       if (requesterSocket) {
+//         requesterSocket.emit('userList', {
+//           users: mergedUsers,
+//           pendingMessages: getPendingMessagesForAllUsers()
+//         });
+//       }
+//     }
+
+//     console.log(mergedUsers)
+//     return mergedUsers;
+//   } catch (err) {
+//     console.error("Error loading active users from DB:", err);
+//     return [];
+//   }
+// }
+
+
+// utils.js or inside your socket.js
+// New merged user list function
+async function getMergedActiveUsers(pool, io, currentUserName) {
+    try {
+        // 1. DB active users
+        const result = await pool.request().query(`
+            SELECT UserName AS name
+            FROM Users
+            WHERE LogInOut = 1
+        `);
+        const dbUsers = result.recordset.map(u => ({
+            name: u.name,
+            id: null, // will be filled if socket match exists
+            room: getPrivateRoomId(currentUserName, u.name)
+        }));
+
+        // 2. Current socket users
+        const socketUsers = Array.from(io.sockets.sockets.values()).map(socket => ({
+            id: socket.id,
+            name: socket.data?.name || null,
+            room: socket.data?.room || null
+        }));
+
+        // 3. Merge by username
+        const merged = [...dbUsers];
+        socketUsers.forEach(su => {
+            const existing = merged.find(u => u.name === su.name);
+            if (existing) {
+                existing.id = su.id;
+                existing.room = su.room || existing.room;
+            } else {
+                // user only in socket list, add them
+                merged.push(su);
+            }
+        });
+
+        return merged;
+    } catch (err) {
+        console.error("Error merging active users:", err);
+        return [];
+    }
+}
+
+function getPrivateRoomId(user1, user2) {
+    return [user1, user2].sort().join('_');
+}
+
+// ====================
+
+
+io.on('connection', async socket => {
+    socket.emit('message', buildMsg(SYSTEM, "Welcome to WinChat!"));
+
+        socket.on('login', ({ name }) => {
+            socket.data.name = name; // store username in socket
+            console.log(`User logged in: ${name} (${socket.id})`);
+        });
+
+
+        // 🔄 Always load DB active users when someone connects
+        await loadActiveUsersFromDB();        
+
+        // Attach socket IDs for matched users
+        UsersState.users.forEach(user => {
+            if (user.name && !user.id) {
+                user.id = socket.id; // Basic attach, can refine
+            }
+        });
+
+
+
+    socket.on('requestUserList', async () => {
+        try {
+            const currentUserName = socket.data?.name || '';
+            const mergedUsers = await loadActiveUsersFromDB(pool, io, currentUserName);
+            const pendingMessages = getPendingMessagesForAllUsers();
+
+            socket.emit('userList', {
+                users: mergedUsers,
+                pendingMessages
+            });
+        } catch (err) {
+            console.error("Error sending user list:", err);
+        }
     });
+
 
     socket.on('enterApp', ({ name }) => {
         const user = activateUser(socket.id, name, null);
@@ -228,10 +528,7 @@ function buildMsg(name, text, room = null, type = 'text', fileName = '') {
 
 function activateUser(id, name, room) {
     const user = { id, name, room };
-    UsersState.setUsers([
-        ...UsersState.users.filter(user => user.id !== id),
-        user
-    ]);
+    UsersState.setUsers([...UsersState.users.filter(user => user.id !== id),user]);
     return user;
 }
 
@@ -247,10 +544,6 @@ function getUser(id) {
 
 function getAllUsers() {
     return UsersState.users;
-}
-
-function getPrivateRoomId(user1, user2) {
-    return [user1, user2].sort().join('_');
 }
 
 // Helper function to get pending message counts for all users
@@ -270,6 +563,15 @@ function getPendingMessagesForAllUsers() {
     return pendingCounts;
 }
 
-server.listen(PORT, () => {
+
+(async () => {
+  await connectToDatabase(); // ✅ Wait for DB connection before continuing
+
+  server.listen(PORT, async () => {
     console.log(`WinChat Server is running on http://localhost:${PORT}`);
-});
+    await loadActiveUsersFromDB(); // Safe now, DB connected
+
+    //setInterval(loadActiveUsersFromDB, 60_000);
+
+  });
+})();
