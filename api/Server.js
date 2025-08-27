@@ -79,9 +79,6 @@ io.on('connection', async socket => {
         });
 
 
-        // 🔄 Always load DB active users when someone connects
-        // await loadActiveUsersFromDB();        
-
         // Attach socket IDs for matched users
         UsersState.users.forEach(user => {
             if (user.name && !user.id) {
@@ -128,7 +125,6 @@ io.on('connection', async socket => {
         UsersState.setUsers([...UsersState.users]);
 
         socket.join(room);
-        // socket.emit('message', buildMsg(SYSTEM, `You have started a chat with ${targetUser}`));
 
         // Deliver any pending messages for this room
         const pendingMessages = PendingMessages.getMessages(socket.id, room);
