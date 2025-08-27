@@ -51,21 +51,24 @@ async function queryDatabase(query, params = {}) {
   }
 }
 
+module.exports = { sql, connectToDatabase, queryDatabase };
+
 // ✅ Function to fetch active users from USERSLOG
-async function fetchActiveUsers(dDate_Log) {
-  if (!dDate_Log) throw new Error("Date of log is required");
+// async function fetchActiveUsers(dDate_Log) {
+//   if (!dDate_Log) throw new Error("Date of log is required");
 
-  const cSql = `
-    SELECT 
-      USERSLOG.UserName,
-      USERSLOG.LogInOut,
-      USERSLOG.Time____
-    FROM USERSLOG
-    WHERE USERSLOG.Date____ >= @dDate_Log
-      AND USERSLOG.UserName <> ' '
-    ORDER BY USERSLOG.RecordId`;
+//   const cSql = `
+//     SELECT 
+//       USERSLOG.UserName,
+//       USERSLOG.LogInOut,
+//       USERSLOG.Time____
+//     FROM USERSLOG
+//     WHERE USERSLOG.Date____ >= @dDate_Log
+//       AND USERSLOG.UserName <> ' '
+//     ORDER BY USERSLOG.RecordId`;
 
-  return await queryDatabase(cSql, { dDate_Log });
-}
+//   return await queryDatabase(cSql, { dDate_Log });
+// }
 
-module.exports = { sql, connectToDatabase, queryDatabase, fetchActiveUsers };
+// module.exports = { sql, connectToDatabase, queryDatabase, fetchActiveUsers };
+

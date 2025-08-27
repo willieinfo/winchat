@@ -309,11 +309,25 @@ input, button {
   }
 }
 
-.activity {
+/* .activity {
     height: 20px;
     color: #888;
     font-style: italic;
     margin: 10px 0;
+} */
+
+.currentUserName {
+    color: #333;
+    padding: 5px;
+    font-style: italic;
+    min-height: 20px; 
+}
+.activity {
+    font-size: 14px;
+    color: #333;
+    padding: 5px;
+    font-style: italic;
+    min-height: 20px; 
 }
 
 #chkAllUsers:hover {

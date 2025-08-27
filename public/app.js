@@ -74,16 +74,41 @@ socket.on("message", (data) => {
     saveMessages(data, room);
 });
 
-let activityTimer;
-socket.on("activity", (name) => {
-    if (selectedUser) {
-        activity.textContent = `${name} is typing...`;
-        clearTimeout(activityTimer);
-        activityTimer = setTimeout(() => {
-            activity.textContent = "";
-        }, 2000);
-    }
+// let activityTimer;
+// socket.on("activity", (name) => {
+//     if (selectedUser) {
+//         activity.textContent = `${name} is typing...`;
+//         clearTimeout(activityTimer);
+//         activityTimer = setTimeout(() => {
+//             activity.textContent = "";
+//         }, 2000);
+//     }
+// });
+
+socket.on('activity', (name) => {
+    activity.textContent = `${name} is typing`;
+    activity.classList.add('typing');
+    setTimeout(() => {
+        activity.textContent = selectedUser ? `Chatting with ${selectedUser.name}` : '';
+        activity.classList.remove('typing');
+    }, 2000);
 });
+
+// Add CSS for animation
+const style = document.createElement('style');
+style.textContent = `
+    .typing:after {
+        content: '...';
+        animation: dots 1s steps(5, end) infinite;
+    }
+    @keyframes dots {
+        0%, 20% { content: '.'; }
+        40% { content: '..'; }
+        60% { content: '...'; }
+        80%, 100% { content: ''; }
+    }
+`;
+document.head.appendChild(style);
 
 socket.on('notification', ({ from, room }) => {
     socket.emit('requestUserList');
@@ -93,19 +118,13 @@ socket.on('userList', ({ users, pendingMessages }) => {
     showUsers(users, pendingMessages);
 });
 
-
 function showUsers(users, pendingMessages) {
     if (!users) return;
-
-    // Map existing usernames in DOM
-    const existingUserNames = Array.from(userName.querySelectorAll('.userItem'))
-        .map(item => item.dataset.username);
 
     // Build a quick lookup for incoming user list
     const incomingNames = users.map(u => u.name);
 
-    // Remove only users who are not in the list at all
-    // (They must be gone from server *and* offline)
+    // Remove users who are no longer present
     userName.querySelectorAll('.userItem').forEach(item => {
         const username = item.dataset.username;
         if (!incomingNames.includes(username)) {
@@ -113,7 +132,6 @@ function showUsers(users, pendingMessages) {
         }
     });
 
-    // Merge: add new users or update existing ones
     users.forEach((user) => {
         if (user.name === nameInput.value) return; // skip self
 
@@ -129,28 +147,6 @@ function showUsers(users, pendingMessages) {
             userIcon.className = 'userIcon';
             userIcon.innerHTML = initials;
             userIcon.style.backgroundColor = getUserColor(user.name);
-
-            // Add notification badge
-            const pendingCount =
-                pendingMessages?.[nameInput.value]?.[user.name] || 0;
-
-            if (pendingCount > 0) {
-                const badge = document.createElement('span');
-                badge.className = 'notification-badge';
-                badge.textContent = pendingCount;
-                badge.style.backgroundColor = '#ff4d4f';
-                badge.style.color = '#fff';
-                badge.style.borderRadius = '50%';
-                badge.style.padding = '2px 6px';
-                badge.style.fontSize = '12px';
-                badge.style.position = 'absolute';
-                badge.style.top = '-5px';
-                badge.style.right = '-5px';
-                badge.style.zIndex = '10';
-                badge.classList.add('pop');
-                setTimeout(() => badge.classList.remove('pop'), 300);
-                userIcon.appendChild(badge);
-            }
 
             userItem.appendChild(userIcon);
             const userNameText = document.createElement('span');
@@ -171,6 +167,36 @@ function showUsers(users, pendingMessages) {
             userName.appendChild(userItem);
         }
 
+        // Always calculate pending count and update/add/remove badge
+        const pendingCount = pendingMessages?.[nameInput.value]?.[user.name] || 0;
+
+        const userIcon = userItem.querySelector('.userIcon');
+        let badge = userIcon.querySelector('.notification-badge');
+
+        if (pendingCount > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'notification-badge';
+                badge.style.backgroundColor = '#ff4d4f';
+                badge.style.color = '#fff';
+                badge.style.borderRadius = '50%';
+                badge.style.padding = '2px 6px';
+                badge.style.fontSize = '12px';
+                badge.style.position = 'absolute';
+                badge.style.top = '-5px';
+                badge.style.right = '-5px';
+                badge.style.zIndex = '10';
+                userIcon.appendChild(badge);
+            }
+            badge.textContent = pendingCount;
+            badge.classList.add('pop');
+            setTimeout(() => badge.classList.remove('pop'), 300);
+        } else {
+            if (badge) {
+                badge.remove();
+            }
+        }
+
         // Keep selected state
         if (selectedUser && selectedUser.name === user.name) {
             userItem.classList.add('selected');
@@ -183,6 +209,7 @@ function showUsers(users, pendingMessages) {
     chatEraser.removeEventListener('click', clearChatHandler);
     chatEraser.addEventListener('click', clearChatHandler);
 }
+
 
 function clearChatHandler() {
     const room = selectedUser ? getPrivateRoomId(nameInput.value, selectedUser.name) : null;
@@ -255,7 +282,6 @@ function sendMessage(e) {
     msgInput.rows = '2';
     msgInput.focus();
 
-    // saveMessages(chatMessage, room);
 }
 
 function enterApp(e) {
@@ -266,6 +292,10 @@ function enterApp(e) {
         });
         document.querySelector('.form-join').style.display = 'none';
         document.querySelector('.form-msg').style.display = 'flex';
+
+        const currentUserName = document.querySelector('.currentUserName')
+        currentUserName.style.display = 'block';
+        currentUserName.textContent = `${nameInput.value.trim()}, you are now logged In`
         // Load global chat messages (room: null)
         loadMessages(null);
     }
@@ -380,11 +410,11 @@ function sendSmiley() {
     smileyPicker.style.position = 'absolute';
     smileyPicker.style.background = '#fff';
     smileyPicker.style.border = '1px solid #ccc';
-    smileyPicker.style.padding = '10px';
+    smileyPicker.style.padding = '6px';
     smileyPicker.style.zIndex = '1000';
     smileyPicker.style.display = 'flex';
     smileyPicker.style.flexWrap = 'wrap';
-    smileyPicker.style.gap = '10px';
+    smileyPicker.style.gap = '6px';
 
     emoticons.forEach(emoji => {
         const button = document.createElement('button');
@@ -409,7 +439,7 @@ function sendSmiley() {
     });
 
     const chatSmileRect = chatSmile.getBoundingClientRect();
-    smileyPicker.style.top = `${chatSmileRect.top - 50}px`;
+    smileyPicker.style.top = `${chatSmileRect.top - 100}px`;
     smileyPicker.style.left = `${chatSmileRect.left}px`;
     document.body.appendChild(smileyPicker);
 
